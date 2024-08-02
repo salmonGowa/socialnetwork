@@ -1,5 +1,7 @@
 "use client";
 
+import LoadingButton from "@/components/LoadingButton";
+import { PasswordInput } from "@/components/PasswordInput";
 import {
   Form,
   FormControl,
@@ -67,7 +69,22 @@ export default function SignUpForm() {
             </FormItem>
           )}
         />
-      
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <PasswordInput placeholder="Password" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <LoadingButton loading={isPending} type="submit" className="w-full">
+          Create account
+        </LoadingButton>
       </form>
     </Form>
   );
