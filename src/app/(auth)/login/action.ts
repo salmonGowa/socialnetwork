@@ -3,9 +3,8 @@
 import prisma from "@/lib/prisma";
 import { loginSchema, LoginValues } from "@/lib/validation";
 import { isRedirectError } from "next/dist/client/components/redirect";
-
 import { redirect } from "next/navigation";
-import { verify } from "@node-rs/argon2";
+import argon2 from "argon2"; // Changed from @node-rs/argon2 to argon2
 import { lucia } from "@/auth";
 import { cookies } from "next/headers";
 
@@ -28,12 +27,10 @@ export async function login(
       };
     }
 
-    const validPassword = await verify(existingUser.passwordHash, password, {
-      memoryCost: 19456,
-      timeCost: 2,
-      outputLen: 32,
-      parallelism: 1,
-    });
+    const validPassword = await argon2.verify(
+      existingUser.passwordHash,
+      password,
+    ); // Updated to use argon2.verify
 
     if (!validPassword) {
       return {
