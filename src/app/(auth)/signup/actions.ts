@@ -1,10 +1,10 @@
-"user server";
+"use server";
 
-import { lucia, validateRequest } from "@/auth";
+import { lucia } from "@/auth";
 import prisma from "@/lib/prisma";
+//import streamServerClient from "@/lib/stream";
 import { signUpSchema, SignUpValues } from "@/lib/validation";
-import { hash } from "@node-rs/argon2";
-import { error } from "console";
+import argon2 from "argon2"; // Changed from @node-rs/argon2 to argon2
 import { generateIdFromEntropySize } from "lucia";
 import { isRedirectError } from "next/dist/client/components/redirect";
 import { cookies } from "next/headers";
@@ -16,14 +16,10 @@ export async function signUp(
   try {
     const { username, email, password } = signUpSchema.parse(credentials);
 
-    const passwordHash = await hash(password, {
-      memoryCost: 19456,
-      timeCost: 2,
-      outputLen: 32,
-      parallelism: 1,
-    });
+    const passwordHash = await argon2.hash(password); // Simplified the hash function as argon2 handles defaults
 
     const userId = generateIdFromEntropySize(10);
+
     const existingUsername = await prisma.user.findFirst({
       where: {
         username: {
@@ -35,7 +31,7 @@ export async function signUp(
 
     if (existingUsername) {
       return {
-        error: "Error Username already taken",
+        error: "Username already taken",
       };
     }
 
@@ -54,14 +50,17 @@ export async function signUp(
       };
     }
 
-    await prisma.user.create({
-      data: {
-        id: userId,
-        username,
-        displayName: username,
-        email,
-        passwordHash,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.user.create({
+        data: {
+          id: userId,
+          username,
+          displayName: username,
+          email,
+          passwordHash,
+        },
+      });
+     
     });
 
     const session = await lucia.createSession(userId, {});
@@ -77,7 +76,7 @@ export async function signUp(
     if (isRedirectError(error)) throw error;
     console.error(error);
     return {
-      error: "Something went wrong please try again",
+      error: "Something went wrong. Please try again.",
     };
   }
 }
