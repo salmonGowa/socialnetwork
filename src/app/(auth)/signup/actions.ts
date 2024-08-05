@@ -2,7 +2,7 @@
 
 import { lucia } from "@/auth";
 import prisma from "@/lib/prisma";
-//import streamServerClient from "@/lib/stream";
+import streamServerClient from "@/lib/stream";
 import { signUpSchema, SignUpValues } from "@/lib/validation";
 import argon2 from "argon2"; // Changed from @node-rs/argon2 to argon2
 import { generateIdFromEntropySize } from "lucia";
@@ -60,7 +60,11 @@ export async function signUp(
           passwordHash,
         },
       });
-     
+      await streamServerClient.upsertUser({
+        id: userId,
+        username,
+        name: username,
+      });
     });
 
     const session = await lucia.createSession(userId, {});
